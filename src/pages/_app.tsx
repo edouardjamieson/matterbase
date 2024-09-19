@@ -5,6 +5,8 @@ import { type AppType } from "next/app";
 import { api } from "~/utils/api";
 
 import "~/styles/globals.css";
+import CmsProvider from "~/components/core/cms";
+import { TooltipProvider } from "~/components/ui/tooltip";
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
@@ -12,7 +14,11 @@ const MyApp: AppType<{ session: Session | null }> = ({
 }) => {
   return (
     <SessionProvider session={session}>
-      <Component {...pageProps} />
+      <CmsProvider session={session}>
+        <TooltipProvider>
+          <Component {...pageProps} />
+        </TooltipProvider>
+      </CmsProvider>
     </SessionProvider>
   );
 };

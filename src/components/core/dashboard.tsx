@@ -1,185 +1,196 @@
-"use client";
-import {
-  ChevronDown,
-  Database,
-  File,
-  Home,
-  LayoutDashboard,
-  PanelRightOpen,
-  Settings,
-  Sidebar,
-} from "lucide-react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import React, { ReactElement, ReactNode } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { cn, string2Color } from "~/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Cms } from "@prisma/client";
+import { Session } from "next-auth";
 import Image from "next/image";
-import { Badge } from "../ui/badge";
-import { useCms } from "./cms";
-import { Input } from "../ui/input";
+import { useRouter } from "next/router";
+import { ReactNode, useEffect, useState } from "react";
 import { Button } from "../ui/button";
+import {
+  Book,
+  Code,
+  HelpCircle,
+  LayoutDashboard,
+  LayoutPanelLeft,
+  PanelRightOpen,
+  Plus,
+  Search,
+  Settings,
+} from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import Link from "next/link";
+import { cn } from "~/lib/utils";
+import { CmsImage } from "./cms";
+import { Input } from "../ui/input";
 
 export interface DashboardProps {
-  children: ReactNode[] | ReactNode;
-  cms?: Cms;
+  children: ReactNode;
+  cms: Cms | null;
+  requiresCms?: boolean;
+  session: Session;
 }
 
-export interface DashboardNavButtonProps {
-  icon?: ReactElement;
-  title: string;
-  path: string;
-  asAccordion?: boolean;
-}
-
-export default function Dashboard({ children, cms }: DashboardProps) {
+export default function Dashboard({
+  cms,
+  requiresCms = true,
+  session,
+  children,
+}: DashboardProps) {
   const router = useRouter();
-  const path = usePathname();
-  const cmsData = useCms();
 
-  const mainSideNav = [
-    {
-      id: "home",
-      path: "/",
-      name: "Home",
-      icon: <Home />,
-    },
-    {
-      id: "cms",
-      path: "/cms",
-      name: "CMS",
-      icon: <Database />,
-    },
-  ];
+  const [loading, setLoading] = useState(true);
 
-  const CMSNavButton = ({
+  useEffect(() => {
+    if (requiresCms && !cms) router.replace("/");
+    else setLoading(false);
+  }, []);
+
+  const NavItem = ({
     path,
     title,
     icon,
   }: {
-    icon?: ReactElement;
-    title: string;
     path: string;
+    title: string;
+    icon: ReactNode;
   }) => {
-    const active = cmsData.getCurrentRoute() == path;
-    const route = cmsData.buildCmsRoute(path);
-
+    const active = router.asPath == path;
     return (
-      <button
-        type="button"
-        onClick={() => router.push(route)}
-        className={cn("flex items-center gap-4 px-4 py-3 transition-all", {
-          "bg-zinc-900 text-white": active,
-          "hover:bg-zinc-200": !active,
-        })}
+      <Link
+        href={path}
+        className={cn(
+          "flex w-full items-center rounded-md px-2 py-2 transition-all",
+          {
+            "bg-zinc-900 text-white": active,
+            "text-zinc-400 hover:bg-zinc-100": !active,
+          },
+        )}
       >
-        {icon &&
-          React.cloneElement(icon, {
-            className: cn("text-zinc-400", { "text-white": active }),
-            size: 20,
-          })}
+        {icon}
         <span
-          className={cn("text-sm font-semibold", {
-            "font-bold": active,
+          className={cn("ml-2 font-medium text-black transition-all", {
+            "text-white": active,
+            "text-zinc-800": !active,
           })}
         >
           {title}
         </span>
-      </button>
+      </Link>
     );
   };
 
   return (
-    <main className="flex h-screen w-screen items-start bg-white">
-      {/* Primary Sidebar */}
-      <div className="flex h-screen w-16 shrink-0 flex-col items-center border-r bg-zinc-100 py-4">
-        <Image
-          src={"/images/logo-black-vertical.svg"}
-          width={500}
-          height={500}
-          alt="logo"
-          className="w-1/4 opacity-60 transition-all hover:opacity-100"
-        />
-      </div>
-      {/* CMS Sidebar */}
-      {cmsData.cms && (
-        <div className="flex h-screen min-w-[250px] shrink-0 flex-col border-r bg-zinc-100">
-          {/* Cms */}
-          <button
-            type="button"
-            className="group flex h-16 w-full items-center justify-between border-b transition-all hover:bg-zinc-200"
-          >
-            <div className="flex items-center px-4">
-              <span className="text-2xl">🚀</span>
-              <span className="ml-2 text-sm font-bold">
-                {cmsData.cms.title}
-              </span>
-            </div>
-
-            <ChevronDown
-              size={18}
-              className="mx-4 shrink-0 transition-all group-hover:translate-y-1"
+    <main className="flex h-screen w-screen items-start overflow-hidden bg-zinc-100">
+      {/* Sidebar */}
+      <div className="flex h-full w-[250px] shrink-0 flex-col border-r bg-white p-4">
+        {/* Logo */}
+        <div className="flex items-center justify-between">
+          <Image
+            src="/images/logo-black-icon.svg"
+            width={200}
+            height={200}
+            alt=""
+            className="w-8"
+          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant={"outline"} size={"icon"}>
+                <PanelRightOpen size={20} className="text-zinc-500" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Collapse sidebar</TooltipContent>
+          </Tooltip>
+        </div>
+        {/* CMS nav */}
+        {cms && (
+          <nav className="mt-4 flex flex-col gap-1">
+            {/* Home */}
+            <NavItem
+              icon={<LayoutDashboard size={20} />}
+              path={`/cms/${cms.id}`}
+              title="Dashboard"
             />
-          </button>
-          {/* Nav */}
-          <div className="flex w-full flex-col">
-            {/* Dashboard */}
-            <CMSNavButton
-              path="/"
-              icon={<LayoutDashboard />}
-              title="Overview"
+            {/* Home */}
+            <NavItem
+              icon={<Code size={20} />}
+              path={`/cms/${cms.id}/api`}
+              title="Api"
             />
             {/* Settings */}
-            <CMSNavButton
-              path="/settings"
-              icon={<Settings />}
+            <NavItem
+              icon={<Settings size={20} />}
+              path={`/cms/${cms.id}/settings`}
               title="Settings"
             />
-            {/* Templates */}
-            <CMSNavButton
-              path="/entries?template=123"
+            <div className="my-4 h-[1px] w-full bg-zinc-100"></div>
+            <NavItem
               icon={<span>📝</span>}
+              path={`/cms/${cms.id}/entries/222`}
               title="Pages"
             />
-            <CMSNavButton
-              path="/entries?template=456"
-              icon={<span>🧩</span>}
-              title="Items"
-            />
-            <CMSNavButton
-              path="/entries?template=789"
+            <NavItem
               icon={<span>✏️</span>}
-              title="Articles"
+              path={`/cms/${cms.id}/entries/222`}
+              title="Blog posts"
             />
+            <button
+              type="button"
+              className="flex w-full items-center rounded-md px-2 py-2 font-medium text-zinc-400 transition-all hover:bg-zinc-100 hover:text-black"
+            >
+              <Plus size={20} />
+              <span className="ml-2">Add template</span>
+            </button>
+            <div className="my-4 h-[1px] w-full bg-zinc-100"></div>
+            {/* Help */}
+            <NavItem
+              icon={<HelpCircle size={20} />}
+              path={`/cms/${cms.id}/help`}
+              title="Help"
+            />
+            {/* Docs */}
+            <NavItem
+              icon={<Book size={20} />}
+              path={`/cms/${cms.id}/help`}
+              title="Docs"
+            />
+          </nav>
+        )}
+      </div>
+      {/* Main view */}
+      {cms && (
+        <div className="h-screen w-full">
+          {/* Top bar */}
+          <div className="flex h-16 w-full items-center border-b bg-white">
+            {/* Active cms */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-full shrink-0 items-center gap-2 border-r px-4 transition-all hover:bg-zinc-100"
+                  onClick={() => router.push("/")}
+                >
+                  <CmsImage cms={cms} />
+                  <span className="font-semibold">{cms.title}</span>
+                  <span className="rounded-full border bg-zinc-100 px-2 py-0.5 text-xs font-semibold">
+                    Pro
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>View all CMS</TooltipContent>
+            </Tooltip>
+            {/* Search */}
+            <div className="group flex w-full items-center px-2">
+              <Search
+                size={20}
+                className="text-zinc-400 transition-all group-focus-within:text-black"
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="ml-2 focus:outline-none"
+              />
+            </div>
           </div>
         </div>
       )}
-
-      {/* CMS bar */}
-      {/* {cmsData.cms && (
-        <div className="h-screen border-r">
-          <div className="flex h-16 w-full items-center border-b pl-4 pr-8">
-            <span className="text-3xl">🚀</span>
-            <div className="ml-4 flex flex-col items-start">
-              <Badge variant={"color"}>Pro</Badge>
-              <span className="text-sm font-bold">{cmsData.cms.title}</span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 p-4">
-            <NavButton path="/" title="yo" icon={<File />} />
-          </div>
-        </div>
-      )} */}
-      <div className="h-screen w-full overflow-auto">{children}</div>
     </main>
   );
 }
