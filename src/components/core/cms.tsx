@@ -34,7 +34,10 @@ export default function CmsProvider({
     console.log("Changed route!");
 
     // Check if in CMS
-    if (!router.query.cmsId) return;
+    if (!router.query.cmsId) {
+      setLoading(false);
+      return;
+    }
 
     // Check if different ID
     if (router.query.cmsId != cmsId) {
