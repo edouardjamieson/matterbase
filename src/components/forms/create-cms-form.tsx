@@ -8,12 +8,19 @@ import { modalFormProps } from '~/utils/types';
 import { cn } from '~/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { useState } from 'react';
+import { api } from '~/utils/api';
+import { toast } from 'sonner';
+import { useRouter } from 'next/router';
+import { Check } from 'lucide-react';
 
 const formSchema = z.object({
 	title: z.string().min(1),
 });
 
 export default function CreateCmsForm({ visible, onSubmit, onCancel }: modalFormProps) {
+	const createCmsMutation = api.cms.create.useMutation();
+
+	const router = useRouter();
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -25,7 +32,17 @@ export default function CreateCmsForm({ visible, onSubmit, onCancel }: modalForm
 
 	const handleSubmit = async (data: z.infer<typeof formSchema>) => {
 		setLoading(true);
-		console.log(data);
+
+		const response = await createCmsMutation.mutateAsync({
+			title: data.title,
+		});
+
+		setLoading(false);
+
+		if (response.success) {
+			toast('Successfully created new site', { icon: <Check size={18} className="text-green-500" /> });
+			router.push(`/sites/${response.data.cms.id}`);
+		}
 	};
 
 	return (
